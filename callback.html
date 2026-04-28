@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <body>
+    <h1>Autorizando...</h1>
+    <script>
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get("access_token");
+
+      if (token) {
+        fetch("/save-token?token=" + token).then(() => {
+          document.body.innerHTML =
+            "<h1>¡Listo! Ya puedes cerrar esta ventana.</h1>";
+          window.close();
+        });
+      }
+    </script>
+  </body>
+</html>

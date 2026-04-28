@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        color: white;
+        text-shadow: 2px 2px 4px #000;
+        overflow: hidden;
+        padding: 20px;
+        background: transparent;
+      }
+      .player-card {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 12px 30px;
+        border-radius: 60px;
+        border-left: 8px solid #9146ff;
+        width: fit-content;
+        margin-bottom: 12px;
+        animation: slideIn 0.5s ease-out forwards;
+      }
+      .avatar {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        margin-right: 20px;
+        border: 2px solid #9146ff;
+        object-fit: cover;
+      }
+      .name {
+        font-size: 32px;
+        font-weight: bold;
+        margin-right: 30px;
+      }
+      .time {
+        color: #deff9a;
+        font-family: monospace;
+        font-size: 32px;
+      }
+      .cola-badge {
+        background: #9146ff;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        animation: slideIn 0.5s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-100px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes slideOut {
+        to {
+          opacity: 0;
+          transform: translateX(-200px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="players"></div>
+    <div id="queue"></div>
+
+    <script>
+      const socket = io("http://localhost:3000", {
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+      });
+
+      let activos = [];
+
+      const defaultAvatar =
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzY2NiI+PHBhdGggZD0iTTEyIDJDMi41IDIgMCA0LjUgMCA3LjV2OWMwIDMgMi41IDUuNSA1LjUgNS41aDExYzMgMCA1LjUtMi41IDUuNS01LjV2LTljMC0zLTIuNS01LjUtNS41LTUuNXptLTggNi41YzAtLjguNy0xLjUgMS41LTEuNVM3IDcuNyA3IDguNXYyYzAgLjgtLjcgMS41LTEuNSAxLjVTNCAxMS4zIDQgMTAuNXYtMnptMTEgMTAuNUg5YTIgMiAwIDAgMS0yLTJ2LTFoMTB2MWEyIDIgMCAwIDEtMiAyem0zLTguNWMwIC44LS43IDEuNS0xLjUgMS41UzE3IDExLjcgMTcgMTAuNXYtMmMwLS44LjctMS41IDEuNS0xLjVzMS41LjcgMS41IDEuNXYyeiIvPjwvc3ZnPg==";
+
+      socket.on("update", (data) => {
+        const container = document.getElementById("players");
+        const nuevos = data.jugando.filter((p) => p !== null);
+
+        container.querySelectorAll(".player-card").forEach((el) => {
+          const playerId = el.dataset.id;
+          if (!nuevos.find((p) => p.id == playerId)) {
+            el.style.animation = "slideOut 0.4s forwards";
+            setTimeout(() => el.remove(), 400);
+          }
+        });
+
+        nuevos.forEach((p) => {
+          let card = document.getElementById(`card-${p.id}`);
+          if (!card) {
+            card = document.createElement("div");
+            card.id = `card-${p.id}`;
+            card.className = "player-card";
+            card.dataset.id = p.id;
+            card.innerHTML = `
+              <img src="${p.avatar}" class="avatar" onerror="this.src='${defaultAvatar}'">
+              <span class="name">${p.name}</span>
+              <span class="time" id="t-${p.id}">00:00</span>
+            `;
+            container.appendChild(card);
+          }
+        });
+
+        const queueEl = document.getElementById("queue");
+        if (data.cola.length > 0) {
+          queueEl.innerHTML = `<div class="cola-badge">🚀 COLA: ${data.cola.length}</div>`;
+        } else {
+          queueEl.innerHTML = "";
+        }
+
+        activos = nuevos;
+      });
+
+      setInterval(() => {
+        activos.forEach((p) => {
+          const el = document.getElementById(`t-${p.id}`);
+          if (el && p.startTime) {
+            const diff = Math.floor((Date.now() - p.startTime) / 1000);
+            const m = String(Math.floor(diff / 60)).padStart(2, "0");
+            const s = String(diff % 60).padStart(2, "0");
+            el.innerText = `${m}:${s}`;
+          }
+        });
+      }, 1000);
+
+      socket.on("connect", () => console.log("Overlay conectado al servidor"));
+      socket.on("disconnect", () => (activos = []));
+    </script>
+  </body>
+</html>

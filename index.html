@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Twitch Queue Manager Pro</title>
+    <style>
+      :root {
+        --twitch-purple: #9147ff;
+        --twitch-dark: #0e0e10;
+        --twitch-panel: #1f1f23;
+        --twitch-border: #303032;
+        --twitch-text: #efeff1;
+        --success: #22c55e;
+        --danger: #eb0400;
+      }
+
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        background: var(--twitch-dark);
+        color: var(--twitch-text);
+        padding: 25px;
+        margin: 0;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      h2,
+      h3 {
+        margin-top: 0;
+        color: var(--twitch-text);
+      }
+
+      .panel {
+        background: var(--twitch-panel);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--twitch-border);
+        margin-bottom: 25px;
+      }
+
+      /* Estilos para el bloque de Ajustes */
+      .settings-panel {
+        background: #18181b;
+        border-left: 4px solid var(--twitch-purple);
+        display: none; /* Se activa vía JS */
+        margin-bottom: 20px;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .config-row {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-grow: 1;
+      }
+
+      input {
+        padding: 12px;
+        background: #000;
+        color: white;
+        border: 1px solid var(--twitch-border);
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      input:focus {
+        border-color: var(--twitch-purple);
+        outline: none;
+      }
+
+      /* Botones */
+      button {
+        cursor: pointer;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition:
+          filter 0.2s,
+          transform 0.1s;
+        font-size: 14px;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+      button:hover {
+        filter: brightness(1.2);
+      }
+
+      .btn-primary {
+        background: var(--twitch-purple);
+        color: white;
+      }
+      .btn-secondary {
+        background: #35353b;
+        color: white;
+      }
+      .btn-test {
+        background: var(--success);
+        color: white;
+      }
+      .btn-fin {
+        background: var(--danger);
+        color: white;
+        padding: 6px 12px;
+      }
+      .btn-subir {
+        background: var(--twitch-purple);
+        color: white;
+        padding: 6px 12px;
+      }
+      .btn-settings {
+        background: transparent;
+        border: 1px solid #444;
+        color: #aaa;
+        margin-left: auto;
+      }
+
+      /* Grid de Listas */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+
+      .column {
+        background: var(--twitch-panel);
+        padding: 20px;
+        border-radius: 10px;
+        min-height: 400px;
+      }
+
+      /* Slots y Jugadores */
+      .slot-card {
+        background: #26262c;
+        border: 1px solid var(--twitch-border);
+        padding: 12px;
+        margin-bottom: 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .slot-card img {
+        border-radius: 50%;
+        border: 2px solid var(--twitch-purple);
+      }
+
+      .slot-info {
+        flex-grow: 1;
+      }
+      .slot-name {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .vacio {
+        border: 2px dashed var(--twitch-border);
+        background: transparent;
+        justify-content: center;
+        color: #71717a;
+      }
+
+      #status {
+        font-size: 13px;
+        margin-top: 15px;
+        color: #adadb8;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="settings-area" class="panel settings-panel">
+        <h3>⚙️ Ajustes de Aplicación</h3>
+        <div class="config-row">
+          <div class="input-group">
+            <label>Twitch Client ID</label>
+            <input
+              type="text"
+              id="clientIdInput"
+              placeholder="Pega aquí tu Client ID de Twitch Dev Console"
+            />
+          </div>
+          <button class="btn-primary" onclick="guardarAjustes()">
+            Guardar ID
+          </button>
+          <button class="btn-secondary" onclick="toggleSettings()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display: flex; align-items: center">
+          <h3>🚀 Panel de Control</h3>
+          <button class="btn-settings" onclick="toggleSettings()">
+            ⚙️ Ajustes
+          </button>
+        </div>
+
+        <div class="config-row">
+          <div class="input-group">
+            <label>Nombre del Premio</label>
+            <input
+              type="text"
+              id="rewardName"
+              placeholder="Ej: Jugar con Alberto"
+            />
+          </div>
+          <div class="input-group" style="flex-grow: 0; width: 100px">
+            <label>Slots</label>
+            <input type="number" id="numSlots" value="3" min="1" max="10" />
+          </div>
+          <button
+            class="btn-secondary"
+            onclick="ipcRenderer.send('iniciar-login')"
+          >
+            1. Login Twitch
+          </button>
+          <button class="btn-primary" onclick="conectar()">2. Conectar</button>
+          <button class="btn-test" onclick="ipcRenderer.send('test-canje')">
+            🧪 Test
+          </button>
+        </div>
+        <p id="status">● Estado: Desconectado</p>
+      </div>
+
+      <div class="grid">
+        <div class="column">
+          <h3>⏳ Cola de Espera</h3>
+          <div id="lista-cola"></div>
+        </div>
+        <div class="column">
+          <h3>🎮 En Juego</h3>
+          <div id="lista-jugando"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+      let miToken = "";
+
+      ipcRenderer.on("necesita-config", () => {
+        document.getElementById("settings-area").style.display = "block";
+      });
+
+      function toggleSettings() {
+        const area = document.getElementById("settings-area");
+        area.style.display = area.style.display === "block" ? "none" : "block";
+      }
+
+      function guardarAjustes() {
+        const nuevoId = document.getElementById("clientIdInput").value;
+        if (!nuevoId) return alert("Introduce un Client ID válido");
+        ipcRenderer.send("guardar-client-id", nuevoId);
+        alert("Client ID guardado correctamente.");
+        toggleSettings();
+      }
+
+      ipcRenderer.on("token-recibido", (e, token) => {
+        miToken = token;
+        document.getElementById("status").innerText =
+          "● Token listo. Configura el premio y conecta.";
+        document.getElementById("status").style.color = "#bf94ff";
+      });
+
+      ipcRenderer.on("twitch-status", (e, msg) => {
+        document.getElementById("status").innerText = "● " + msg;
+        document.getElementById("status").style.color = msg.includes("Error")
+          ? "#eb0400"
+          : "#22c55e";
+      });
+
+      function conectar() {
+        const rewardName = document.getElementById("rewardName").value;
+        const num = document.getElementById("numSlots").value;
+        if (!miToken) return alert("Primero haz Login en Twitch");
+        ipcRenderer.send("configurar-slots", num);
+        ipcRenderer.send("conectar-con-token", { token: miToken, rewardName });
+      }
+
+      ipcRenderer.on("update-ui", (e, data) => {
+        const divCola = document.getElementById("lista-cola");
+        divCola.innerHTML = data.cola.length
+          ? data.cola
+              .map(
+                (p, i) => `
+            <div class="slot-card">
+                <img src="${p.avatar || "https://pwa.twitch.tv/assets/default-profile-image.png"}" width="35" >
+                <div class="slot-info">
+                    <span class="slot-name">${p.name}</span>
+                </div>
+                <button class="btn-subir" onclick="ipcRenderer.send('subir-jugador', ${i})">Subir</button>
+                <button onclick="ipcRenderer.send('eliminar-cola', ${i})" style="background:none; color:#777; font-size:18px;">×</button>
+            </div>
+        `,
+              )
+              .join("")
+          : '<p class="vacio">No hay nadie en la cola</p>';
+
+        const divJugando = document.getElementById("lista-jugando");
+        divJugando.innerHTML = data.jugando
+          .map((p, i) => {
+            if (p) {
+              return `
+                    <div class="slot-card">
+                        <img src="${p.avatar}" width="35">
+                        <div class="slot-info">
+                            <span class="slot-name">${p.name}</span>
+                        </div>
+                        <button class="btn-fin" onclick="ipcRenderer.send('finalizar-jugador', ${i})">Fin</button>
+                    </div>`;
+            } else {
+              return `<div class="slot-card vacio">Slot Libre #${i + 1}</div>`;
+            }
+          })
+          .join("");
+      });
+    </script>
+  </body>
+</html>
