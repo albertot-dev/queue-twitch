@@ -45,16 +45,17 @@ Una herramienta ligera y potente para que los streamers gestionen colas de jugad
 Si quieres modificar el código, sigue estos pasos en tu terminal:
 
 1. **Clonar e instalar:**
-   !!!bash
+
+   ```bash
    git clone [https://github.com/albertot-dev/queue-twitch.git](https://github.com/albertot-dev/queue-twitch.git)
    cd queue-twitch
    npm install
-   !!!
+   ```
 
 2. **Ejecutar:**
-   !!!bash
+   ```bash
    npm start
-   !!!
+   ```
 
 ---
 
